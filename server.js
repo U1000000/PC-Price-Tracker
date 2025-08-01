@@ -108,13 +108,13 @@ async function fetchPriceFromAkakce(url) {
                 return status >= 200 && status < 300;
             }
         });
-
+        
         if (!response.data || response.data.length < 100) {
             console.error('Geçersiz yanıt alındı');
             return null;
         }
         const $ = cheerio.load(response.data);
-
+        
         const priceSelectors = [
             '.pt_v8',
             '.pb_v8',
@@ -132,26 +132,25 @@ async function fetchPriceFromAkakce(url) {
 
         for (const selector of priceSelectors) {
             const elements = $(selector);
-
+            
             for (let i = 0; i < elements.length; i++) {
                 const element = elements.eq(i);
                 const priceText = element.text().trim();
-
+                
                 if (priceText && priceText.length > 0) {
-
                     const cleanText = priceText
-                        .replace(/[^\d,]/g, '') 
-                        .replace(',', '.'); 
-
+                        .replace(/[^\d,]/g, '')
+                        .replace(',', '.');
+                    
                     const price = parseFloat(cleanText);
-
+                    
                     if (!isNaN(price) && price > 0) {
                         return price;
                     }
                 }
             }
         }
-
+        
         return null;
     } catch (error) {
         console.error(`Fiyat çekilemedi (${url}):`, error.message);
@@ -162,7 +161,6 @@ async function fetchPriceFromAkakce(url) {
 async function fetchAllPrices() {
     for (const part of PARTS_CONFIG) {
         try {
-
             if (!part.url) {
                 console.log(`${part.name} için sabit fiyat kullanılıyor.`);
                 partsData[part.name] = {
@@ -173,14 +171,12 @@ async function fetchAllPrices() {
                 };
                 continue;
             }
-
             const waitTime = 1500;
             await new Promise(resolve => setTimeout(resolve, waitTime));
-
+            
             const price = await fetchPriceFromAkakce(part.url);
             if (price) {
                 console.log(`${part.name} için fiyat bulundu.`);
-
                 if (!partsData[part.name]) {
                     partsData[part.name] = {
                         category: part.category,
@@ -196,7 +192,6 @@ async function fetchAllPrices() {
                     price: price
                 });
             } else {
-
                 if (!partsData[part.name]) {
                     partsData[part.name] = {
                         category: part.category,
@@ -230,5 +225,5 @@ fetchAllPrices().then(() => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Sunucu http:
+    console.log(`Sunucu http://localhost:${PORT} adresinde çalışıyor`);
 });
