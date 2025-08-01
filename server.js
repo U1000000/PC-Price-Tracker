@@ -6,12 +6,10 @@ const cheerio = require('cheerio');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS ayarları
 app.use(cors());
 app.use(express.json());
 app.use(express.static('.'));
 
-// Akakce.com için HTTP istek başlıkları
 const headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
@@ -20,7 +18,6 @@ const headers = {
     'Pragma': 'no-cache'
 };
 
-// Parça konfigürasyonu
 const PARTS_CONFIG = [
     {
         name: "Phanteks Eclipse G360A",
@@ -96,14 +93,11 @@ const PARTS_CONFIG = [
     }
 ];
 
-// Fiyat geçmişi için başlangıç tarihi (3 ay öncesi)
 const startDate = new Date();
 startDate.setMonth(startDate.getMonth() - 3);
 
-// Parça fiyatlarını ve geçmiş verilerini tutan obje
 let partsData = {};
 
-// Akakce.com'dan fiyat çek
 async function fetchPriceFromAkakce(url) {
     try {
         const response = await axios.get(url, { 
@@ -114,14 +108,13 @@ async function fetchPriceFromAkakce(url) {
                 return status >= 200 && status < 300;
             }
         });
-        
+
         if (!response.data || response.data.length < 100) {
             console.error('Geçersiz yanıt alındı');
             return null;
         }
         const $ = cheerio.load(response.data);
-        
-        // Fiyat elementlerini bulmak için farklı seçiciler dene
+
         const priceSelectors = [
             '.pt_v8',
             '.pb_v8',
@@ -139,26 +132,26 @@ async function fetchPriceFromAkakce(url) {
 
         for (const selector of priceSelectors) {
             const elements = $(selector);
-            
+
             for (let i = 0; i < elements.length; i++) {
                 const element = elements.eq(i);
                 const priceText = element.text().trim();
-                
+
                 if (priceText && priceText.length > 0) {
-                    // Fiyatı sayıya çevir (TL, ₺, virgül ve boşlukları temizle)
+
                     const cleanText = priceText
-                        .replace(/[^\d,]/g, '') // Sadece rakamları ve virgülü tut
-                        .replace(',', '.'); // Virgülü noktaya çevir
-                    
+                        .replace(/[^\d,]/g, '') 
+                        .replace(',', '.'); 
+
                     const price = parseFloat(cleanText);
-                    
+
                     if (!isNaN(price) && price > 0) {
                         return price;
                     }
                 }
             }
         }
-        
+
         return null;
     } catch (error) {
         console.error(`Fiyat çekilemedi (${url}):`, error.message);
@@ -166,11 +159,10 @@ async function fetchPriceFromAkakce(url) {
     }
 }
 
-// Tüm parçaların fiyatlarını çek
 async function fetchAllPrices() {
     for (const part of PARTS_CONFIG) {
         try {
-            // URL yoksa veya null ise, fallback fiyatı kullan
+
             if (!part.url) {
                 console.log(`${part.name} için sabit fiyat kullanılıyor.`);
                 partsData[part.name] = {
@@ -181,14 +173,14 @@ async function fetchAllPrices() {
                 };
                 continue;
             }
-            // Rate limiting için 1.5 saniye bekle
+
             const waitTime = 1500;
             await new Promise(resolve => setTimeout(resolve, waitTime));
-            
+
             const price = await fetchPriceFromAkakce(part.url);
             if (price) {
                 console.log(`${part.name} için fiyat bulundu.`);
-                // Parça verisi yoksa oluştur
+
                 if (!partsData[part.name]) {
                     partsData[part.name] = {
                         category: part.category,
@@ -198,14 +190,13 @@ async function fetchAllPrices() {
                     };
                 }
 
-                // Fiyatı güncelle
                 partsData[part.name].currentPrice = price;
                 partsData[part.name].priceHistory.push({
                     date: new Date(),
                     price: price
                 });
             } else {
-                // Fiyat çekilemediyse fallback fiyatı kullan
+
                 if (!partsData[part.name]) {
                     partsData[part.name] = {
                         category: part.category,
@@ -221,12 +212,10 @@ async function fetchAllPrices() {
     }
 }
 
-// API: Tüm parçaları getir
 app.get('/api/parts', (req, res) => {
     res.json(partsData);
 });
 
-// API: Fiyatları güncelle
 app.post('/api/update-prices', async (req, res) => {
     try {
         await fetchAllPrices();
@@ -236,12 +225,10 @@ app.post('/api/update-prices', async (req, res) => {
     }
 });
 
-// İlk verileri yükle
 fetchAllPrices().then(() => {
     console.log('İlk fiyat verileri yüklendi');
 });
 
-// Sunucuyu başlat
 app.listen(PORT, () => {
-    console.log(`Sunucu http://localhost:${PORT} adresinde çalışıyor`);
+    console.log(`Sunucu http:
 });
