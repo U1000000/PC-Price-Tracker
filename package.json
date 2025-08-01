@@ -1,0 +1,32 @@
+{
+  "name": "pc-price-tracker",
+  "version": "1.0.0",
+  "description": "PC Parça Fiyat Takip Sistemi",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "echo 'No build step required'"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "pc",
+    "parts",
+    "price",
+    "tracker",
+    "turkey"
+  ],
+  "author": "PC Price Tracker",
+  "license": "MIT"
+} 

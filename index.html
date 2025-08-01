@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Parça Fiyat Takip</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .last-update {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .update-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e9ecef;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .parts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .part-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        .part-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .part-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .part-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .part-category {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .price-section {
+            margin: 20px 0;
+        }
+
+        .current-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #27ae60;
+            margin-bottom: 5px;
+        }
+
+        .price-change {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .price-up {
+            color: #e74c3c;
+        }
+
+        .price-down {
+            color: #27ae60;
+        }
+
+        .price-stable {
+            color: #6c757d;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .refresh-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #0056b3;
+        }
+
+        .total-price-section {
+            padding: 20px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+        }
+
+        .total-price-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .total-price-header {
+            margin-bottom: 20px;
+        }
+
+        .total-price-header h2 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .total-price-amount {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .total-price {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #27ae60;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .total-price-change {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .change-amount {
+            color: #6c757d;
+        }
+
+        .change-percentage {
+            color: #6c757d;
+        }
+
+        .total-price-change.up .change-amount,
+        .total-price-change.up .change-percentage {
+            color: #e74c3c;
+        }
+
+        .total-price-change.down .change-amount,
+        .total-price-change.down .change-percentage {
+            color: #27ae60;
+        }
+
+        .total-price-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .breakdown-label {
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .breakdown-value {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .fixed-price-note {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: 1px solid #ffeeba;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #4CAF50, #8BC34A);
+            border-radius: 5px;
+            transition: width 0.3s ease-in-out;
+        }
+
+        .progress-text {
+            margin-top: 5px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .view-button-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .view-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+            display: inline-block;
+        }
+
+        .view-button:hover {
+            background-color: #388E3C;
+        }
+
+        @media (max-width: 768px) {
+            .parts-grid {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .total-price {
+                font-size: 2.5rem;
+            }
+
+            .total-price-breakdown {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🖥️ PC Parça Fiyat Takip</h1>
+        </div>
+        
+        <div class="status-bar">
+            <div class="last-update">
+                Son güncelleme: <span id="lastUpdate">Henüz güncellenmedi</span>
+            </div>
+            <div class="update-indicator">
+                <div class="spinner" id="spinner" style="display: none;"></div>
+                <span id="updateStatus">Hazırlanıyor...</span>
+                <button class="refresh-btn" onclick="refreshPrices()">Yenile</button>
+            </div>
+        </div>
+
+        <div class="total-price-section">
+            <div class="total-price-card">
+                <div class="total-price-header">
+                    <h2>💰 Toplam Sistem Fiyatı</h2>
+                    <div class="total-price-amount">
+                        <span class="total-price">₺<span id="totalPrice">0</span></span>
+                        <div class="total-price-change" id="totalPriceChange">
+                            <span class="change-amount">₺0</span>
+                            <span class="change-percentage">(0%)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="total-price-breakdown">
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">Parça Sayısı:</span>
+                        <span class="breakdown-value" id="partCount">0</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">En Pahalı Parça:</span>
+                        <span class="breakdown-value" id="mostExpensivePart">-</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">En Ucuz Parça:</span>
+                        <span class="breakdown-value" id="cheapestPart">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="partsContainer" class="parts-grid">
+            <div class="loading">
+                <h3>Parçalar yükleniyor...</h3>
+                <p>Fiyatlar toplanıyor...</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API endpoint - localhost
+        const API_BASE_URL = 'http://localhost:3000/api';
+        
+        // Toplam parça sayısı (server.js'den)
+        const PARTS_CONFIG = [
+            "Phanteks Eclipse G360A",
+            "Intel Core i5-13600K",
+            "DeepCool LS520 RGB 240mm",
+            "MSI PRO Z790-S WIFI",
+            "Patriot Viper Venom 16GB (2x8) 5600MHz DDR5",
+            "Kingston KC3000 1TB NVMe SSD",
+            "DeepCool PQ650M 650W",
+            "Glorious Model O Mat",
+            "ASUS ROG Strix Scope II RX Red Switch",
+            "Razer BlackShark V2 Pro 2023",
+            "PNY RTX 4060 Ti 16GB VERTO OC",
+            "AOC 24G2ZU 23.8\" Gaming Monitor"
+        ];
+        
+        let currentParts = [];
+
+        // Parçaları backend'den çek
+        async function fetchParts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/parts`);
+                
+                if (!response.ok) {
+                    throw new Error('Parça listesi yüklenemedi');
+                }
+                
+                const parts = await response.json();
+                return Object.entries(parts).map(([name, details]) => ({
+                    name,
+                    ...details,
+                    previousPrice: details.priceHistory && details.priceHistory.length > 1 ? 
+                        details.priceHistory[details.priceHistory.length - 2].price : 
+                        details.currentPrice
+                }));
+                
+            } catch (error) {
+                console.error('Parça listesi çekme hatası:', error);
+                return [];
+            }
+        }
+
+        // Toplam fiyat hesapla
+        function calculateTotalPrice(parts) {
+            return parts.reduce((total, part) => total + part.currentPrice, 0);
+        }
+
+        // Toplam fiyat değişimini hesapla
+        function calculateTotalPriceChange(parts) {
+            const currentTotal = calculateTotalPrice(parts);
+            const previousTotal = parts.reduce((total, part) => total + (part.previousPrice || part.currentPrice), 0);
+            const change = currentTotal - previousTotal;
+            const changePercent = previousTotal > 0 ? (change / previousTotal) * 100 : 0;
+            
+            return {
+                change: change,
+                changePercent: changePercent,
+                currentTotal: currentTotal,
+                previousTotal: previousTotal
+            };
+        }
+
+        // En pahalı ve en ucuz parçaları bul
+        function findPriceExtremes(parts) {
+            if (parts.length === 0) return { mostExpensive: null, cheapest: null };
+            
+            const mostExpensive = parts.reduce((max, part) => 
+                part.currentPrice > max.currentPrice ? part : max
+            );
+            
+            const cheapest = parts.reduce((min, part) => 
+                part.currentPrice < min.currentPrice ? part : min
+            );
+            
+            return { mostExpensive, cheapest };
+        }
+
+        // Toplam fiyat bilgilerini güncelle
+        function updateTotalPriceInfo(parts) {
+            const totalPrice = calculateTotalPrice(parts);
+            const priceChange = calculateTotalPriceChange(parts);
+            const extremes = findPriceExtremes(parts);
+            
+            // Toplam fiyat
+            document.getElementById('totalPrice').textContent = totalPrice.toLocaleString('tr-TR');
+            
+            // Fiyat değişimi
+            const totalPriceChangeElement = document.getElementById('totalPriceChange');
+            const changeAmountElement = totalPriceChangeElement.querySelector('.change-amount');
+            const changePercentageElement = totalPriceChangeElement.querySelector('.change-percentage');
+            
+            changeAmountElement.textContent = `₺${Math.abs(priceChange.change).toLocaleString('tr-TR')}`;
+            changePercentageElement.textContent = `(${Math.abs(priceChange.changePercent).toFixed(1)}%)`;
+            
+            // Değişim rengini ayarla
+            totalPriceChangeElement.className = 'total-price-change';
+            if (priceChange.change > 0) {
+                totalPriceChangeElement.classList.add('up');
+            } else if (priceChange.change < 0) {
+                totalPriceChangeElement.classList.add('down');
+            }
+            
+            // Parça sayısı
+            document.getElementById('partCount').textContent = parts.length;
+            
+            // En pahalı parça
+            document.getElementById('mostExpensivePart').textContent = 
+                extremes.mostExpensive ? `${extremes.mostExpensive.name} (₺${extremes.mostExpensive.currentPrice.toLocaleString('tr-TR')})` : '-';
+            
+            // En ucuz parça
+            document.getElementById('cheapestPart').textContent = 
+                extremes.cheapest ? `${extremes.cheapest.name} (₺${extremes.cheapest.currentPrice.toLocaleString('tr-TR')})` : '-';
+        }
+
+        // Fiyat değişim yüzdesini hesapla
+        function calculatePriceChange(current, previous) {
+            if (!previous) return 0;
+            return ((current - previous) / previous) * 100;
+        }
+
+        // Fiyat değişim rengini belirle
+        function getPriceChangeClass(change) {
+            if (change > 0) return 'price-up';
+            if (change < 0) return 'price-down';
+            return 'price-stable';
+        }
+
+        // Parça kartını oluştur
+        function createPartCard(part) {
+            const priceChange = calculatePriceChange(part.currentPrice, part.previousPrice);
+            const priceChangeClass = getPriceChangeClass(priceChange);
+            const changeIcon = priceChange > 0 ? '↗️' : priceChange < 0 ? '↘️' : '→';
+            
+            return `
+                <div class="part-card">
+                    <div class="part-header">
+                        <div>
+                            <div class="part-name">${part.name}</div>
+                            <div class="part-category">${part.category}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="price-section">
+                        <div class="current-price">₺${part.currentPrice.toLocaleString('tr-TR')}</div>
+                        <div class="price-change ${priceChangeClass}">
+                            ${changeIcon} ${Math.abs(priceChange).toFixed(1)}% 
+                            (₺${Math.abs(part.currentPrice - (part.previousPrice || part.currentPrice)).toLocaleString('tr-TR')})
+                        </div>
+                    </div>
+                    
+                    ${!part.url ? `
+                        <div class="fixed-price-note">
+                            ⚠️ Bu ürün stoklarda bulunmamaktadır. Gösterilen fiyat stokta satılan son ürünün fiyatıdır.
+                        </div>
+                    ` : `
+                        <div class="view-button-container">
+                            <a href="${part.url}" target="_blank" class="view-button">
+                                <span>👁️ Görüntüle</span>
+                            </a>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        // Backend'den fiyatları güncelle
+        async function updatePrices() {
+            const spinner = document.getElementById('spinner');
+            const updateStatus = document.getElementById('updateStatus');
+            const lastUpdate = document.getElementById('lastUpdate');
+            
+            spinner.style.display = 'block';
+            updateStatus.textContent = 'Güncelleniyor...';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/update-prices`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Fiyat güncelleme hatası');
+                }
+                
+                // Güncel verileri çek ve göster
+                currentParts = await fetchParts();
+                renderParts();
+                
+                const now = new Date();
+                lastUpdate.textContent = now.toLocaleTimeString('tr-TR');
+                updateStatus.textContent = 'Güncel';
+                spinner.style.display = 'none';
+                
+            } catch (error) {
+                console.error('Fiyat güncelleme hatası:', error);
+                updateStatus.textContent = 'Hata!';
+                spinner.style.display = 'none';
+            }
+        }
+
+        // Parçaları render et
+        function renderParts() {
+            const container = document.getElementById('partsContainer');
+            
+            if (!currentParts || currentParts.length === 0) {
+                container.innerHTML = `
+                    <div class="error">
+                        <h3>Hata!</h3>
+                        <p>Parça verileri yüklenemedi. Lütfen sayfayı yenileyin.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Parçaları fiyata göre sırala (en pahalıdan en ucuza)
+            const sortedParts = [...currentParts].sort((a, b) => b.currentPrice - a.currentPrice);
+            
+            container.innerHTML = sortedParts.map(part => createPartCard(part)).join('');
+            updateTotalPriceInfo(currentParts);
+        }
+
+        // Progress bar güncelle
+        function updateProgress(percentage) {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            if (progressFill && progressText) {
+                progressFill.style.width = `${percentage}%`;
+                progressText.textContent = `${Math.round(percentage)}%`;
+            }
+        }
+
+        // Manuel yenileme
+        function refreshPrices() {
+            updatePrices();
+        }
+
+        // Sayfa yüklendiğinde
+        window.addEventListener('load', async () => {
+            try {
+                // Progress bar başlat
+                updateProgress(0);
+                
+                // Parçaları çek
+                currentParts = await fetchParts();
+                
+                // Progress'i parça sayısına göre güncelle
+                if (currentParts && currentParts.length > 0) {
+                    const progressPercentage = (currentParts.length / PARTS_CONFIG.length) * 100;
+                    updateProgress(progressPercentage);
+                } else {
+                    updateProgress(0);
+                }
+                
+                // Parçaları göster
+                setTimeout(() => {
+                    renderParts();
+                }, 300);
+                
+            } catch (error) {
+                console.error('Sayfa yükleme hatası:', error);
+                document.getElementById('partsContainer').innerHTML = `
+                    <div class="error">
+                        <h3>Yükleme Hatası</h3>
+                        <p>Parça verileri yüklenemedi: ${error.message}</p>
+                    </div>
+                `;
+                updateProgress(0);
+            }
+        });
+    </script>
+</body>
+</html>
