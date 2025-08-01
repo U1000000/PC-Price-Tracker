@@ -334,11 +334,11 @@
                 grid-template-columns: 1fr;
                 padding: 20px;
             }
-            
+
             .header h1 {
                 font-size: 2rem;
             }
-            
+
             .status-bar {
                 flex-direction: column;
                 gap: 10px;
@@ -360,7 +360,7 @@
         <div class="header">
             <h1>🖥️ PC Parça Fiyat Takip</h1>
         </div>
-        
+
         <div class="status-bar">
             <div class="last-update">
                 Son güncelleme: <span id="lastUpdate">Henüz güncellenmedi</span>
@@ -414,10 +414,9 @@
     </div>
 
     <script>
-        // API endpoint - localhost
+
         const API_BASE_URL = 'http://localhost:3000/api';
-        
-        // Toplam parça sayısı (server.js'den)
+
         const PARTS_CONFIG = [
             "Phanteks Eclipse G360A",
             "Intel Core i5-13600K",
@@ -432,18 +431,17 @@
             "PNY RTX 4060 Ti 16GB VERTO OC",
             "AOC 24G2ZU 23.8\" Gaming Monitor"
         ];
-        
+
         let currentParts = [];
 
-        // Parçaları backend'den çek
         async function fetchParts() {
             try {
                 const response = await fetch(`${API_BASE_URL}/parts`);
-                
+
                 if (!response.ok) {
                     throw new Error('Parça listesi yüklenemedi');
                 }
-                
+
                 const parts = await response.json();
                 return Object.entries(parts).map(([name, details]) => ({
                     name,
@@ -452,25 +450,23 @@
                         details.priceHistory[details.priceHistory.length - 2].price : 
                         details.currentPrice
                 }));
-                
+
             } catch (error) {
                 console.error('Parça listesi çekme hatası:', error);
                 return [];
             }
         }
 
-        // Toplam fiyat hesapla
         function calculateTotalPrice(parts) {
             return parts.reduce((total, part) => total + part.currentPrice, 0);
         }
 
-        // Toplam fiyat değişimini hesapla
         function calculateTotalPriceChange(parts) {
             const currentTotal = calculateTotalPrice(parts);
             const previousTotal = parts.reduce((total, part) => total + (part.previousPrice || part.currentPrice), 0);
             const change = currentTotal - previousTotal;
             const changePercent = previousTotal > 0 ? (change / previousTotal) * 100 : 0;
-            
+
             return {
                 change: change,
                 changePercent: changePercent,
@@ -479,77 +475,66 @@
             };
         }
 
-        // En pahalı ve en ucuz parçaları bul
         function findPriceExtremes(parts) {
             if (parts.length === 0) return { mostExpensive: null, cheapest: null };
-            
+
             const mostExpensive = parts.reduce((max, part) => 
                 part.currentPrice > max.currentPrice ? part : max
             );
-            
+
             const cheapest = parts.reduce((min, part) => 
                 part.currentPrice < min.currentPrice ? part : min
             );
-            
+
             return { mostExpensive, cheapest };
         }
 
-        // Toplam fiyat bilgilerini güncelle
         function updateTotalPriceInfo(parts) {
             const totalPrice = calculateTotalPrice(parts);
             const priceChange = calculateTotalPriceChange(parts);
             const extremes = findPriceExtremes(parts);
-            
-            // Toplam fiyat
+
             document.getElementById('totalPrice').textContent = totalPrice.toLocaleString('tr-TR');
-            
-            // Fiyat değişimi
+
             const totalPriceChangeElement = document.getElementById('totalPriceChange');
             const changeAmountElement = totalPriceChangeElement.querySelector('.change-amount');
             const changePercentageElement = totalPriceChangeElement.querySelector('.change-percentage');
-            
+
             changeAmountElement.textContent = `₺${Math.abs(priceChange.change).toLocaleString('tr-TR')}`;
             changePercentageElement.textContent = `(${Math.abs(priceChange.changePercent).toFixed(1)}%)`;
-            
-            // Değişim rengini ayarla
+
             totalPriceChangeElement.className = 'total-price-change';
             if (priceChange.change > 0) {
                 totalPriceChangeElement.classList.add('up');
             } else if (priceChange.change < 0) {
                 totalPriceChangeElement.classList.add('down');
             }
-            
-            // Parça sayısı
+
             document.getElementById('partCount').textContent = parts.length;
-            
-            // En pahalı parça
+
             document.getElementById('mostExpensivePart').textContent = 
                 extremes.mostExpensive ? `${extremes.mostExpensive.name} (₺${extremes.mostExpensive.currentPrice.toLocaleString('tr-TR')})` : '-';
-            
-            // En ucuz parça
+
             document.getElementById('cheapestPart').textContent = 
                 extremes.cheapest ? `${extremes.cheapest.name} (₺${extremes.cheapest.currentPrice.toLocaleString('tr-TR')})` : '-';
         }
 
-        // Fiyat değişim yüzdesini hesapla
         function calculatePriceChange(current, previous) {
             if (!previous) return 0;
             return ((current - previous) / previous) * 100;
         }
 
-        // Fiyat değişim rengini belirle
         function getPriceChangeClass(change) {
             if (change > 0) return 'price-up';
             if (change < 0) return 'price-down';
             return 'price-stable';
         }
 
-        // Parça kartını oluştur
         function createPartCard(part) {
             const priceChange = calculatePriceChange(part.currentPrice, part.previousPrice);
             const priceChangeClass = getPriceChangeClass(priceChange);
             const changeIcon = priceChange > 0 ? '↗️' : priceChange < 0 ? '↘️' : '→';
-            
+
             return `
                 <div class="part-card">
                     <div class="part-header">
@@ -558,7 +543,7 @@
                             <div class="part-category">${part.category}</div>
                         </div>
                     </div>
-                    
+
                     <div class="price-section">
                         <div class="current-price">₺${part.currentPrice.toLocaleString('tr-TR')}</div>
                         <div class="price-change ${priceChangeClass}">
@@ -566,7 +551,7 @@
                             (₺${Math.abs(part.currentPrice - (part.previousPrice || part.currentPrice)).toLocaleString('tr-TR')})
                         </div>
                     </div>
-                    
+
                     ${!part.url ? `
                         <div class="fixed-price-note">
                             ⚠️ Bu ürün stoklarda bulunmamaktadır. Gösterilen fiyat stokta satılan son ürünün fiyatıdır.
@@ -582,33 +567,31 @@
             `;
         }
 
-        // Backend'den fiyatları güncelle
         async function updatePrices() {
             const spinner = document.getElementById('spinner');
             const updateStatus = document.getElementById('updateStatus');
             const lastUpdate = document.getElementById('lastUpdate');
-            
+
             spinner.style.display = 'block';
             updateStatus.textContent = 'Güncelleniyor...';
-            
+
             try {
                 const response = await fetch(`${API_BASE_URL}/update-prices`, {
                     method: 'POST'
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Fiyat güncelleme hatası');
                 }
-                
-                // Güncel verileri çek ve göster
+
                 currentParts = await fetchParts();
                 renderParts();
-                
+
                 const now = new Date();
                 lastUpdate.textContent = now.toLocaleTimeString('tr-TR');
                 updateStatus.textContent = 'Güncel';
                 spinner.style.display = 'none';
-                
+
             } catch (error) {
                 console.error('Fiyat güncelleme hatası:', error);
                 updateStatus.textContent = 'Hata!';
@@ -616,10 +599,9 @@
             }
         }
 
-        // Parçaları render et
         function renderParts() {
             const container = document.getElementById('partsContainer');
-            
+
             if (!currentParts || currentParts.length === 0) {
                 container.innerHTML = `
                     <div class="error">
@@ -629,52 +611,45 @@
                 `;
                 return;
             }
-            
-            // Parçaları fiyata göre sırala (en pahalıdan en ucuza)
+
             const sortedParts = [...currentParts].sort((a, b) => b.currentPrice - a.currentPrice);
-            
+
             container.innerHTML = sortedParts.map(part => createPartCard(part)).join('');
             updateTotalPriceInfo(currentParts);
         }
 
-        // Progress bar güncelle
         function updateProgress(percentage) {
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
-            
+
             if (progressFill && progressText) {
                 progressFill.style.width = `${percentage}%`;
                 progressText.textContent = `${Math.round(percentage)}%`;
             }
         }
 
-        // Manuel yenileme
         function refreshPrices() {
             updatePrices();
         }
 
-        // Sayfa yüklendiğinde
         window.addEventListener('load', async () => {
             try {
-                // Progress bar başlat
+
                 updateProgress(0);
-                
-                // Parçaları çek
+
                 currentParts = await fetchParts();
-                
-                // Progress'i parça sayısına göre güncelle
+
                 if (currentParts && currentParts.length > 0) {
                     const progressPercentage = (currentParts.length / PARTS_CONFIG.length) * 100;
                     updateProgress(progressPercentage);
                 } else {
                     updateProgress(0);
                 }
-                
-                // Parçaları göster
+
                 setTimeout(() => {
                     renderParts();
                 }, 300);
-                
+
             } catch (error) {
                 console.error('Sayfa yükleme hatası:', error);
                 document.getElementById('partsContainer').innerHTML = `
